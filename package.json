@@ -1,31 +1,59 @@
 {
-
-    "name" : "oracledb",
-    "version" : "0.4.2",
-    "description" : "Oracle Database driver by Oracle Corp.",
-    "license" : "Apache 2.0",
-    "homepage": "http://www.oracle.com/technetwork/database/database-technologies/node_js/index.html",
-    "keywords" : [
-	"Oracle", "Database", "official", "oracledb", "nodejs", "db", "binding", "extension", "module", "driver", "library", "plugin", "client", "oci"
-    ],
-    "repository" : {
-	"type" : "git",
-	"url" : "git://github.com/oracle/node-oracledb.git"
-    },
-    "dependencies" : {
-      "nan": "^1.7.0"
-    },
-    "engines" : {
-	"node" : ">=0.10.28"
-    },
-    "engineStrict": true,
-    "maintainers" : [
-	{
-	    "name" : "Oracle Corp."
-	}
-    ],
-    "bugs" : {
-	"url" : "https://github.com/oracle/node-oracledb/issues"
-    },
-    "main" : "./index.js"
+  "name": "oracledb",
+  "version": "1.7.1",
+  "description": "Oracle Database driver by Oracle Corp.",
+  "license": "Apache-2.0",
+  "homepage": "http://www.oracle.com/technetwork/database/database-technologies/scripting-languages/node_js/",
+  "keywords": [
+    "oracledb",
+    "dboracle",
+    "Node.js",
+    "SQL",
+    "PL/SQL",
+    "connection",
+    "connectivity",
+    "OCI",
+    "client",
+    "plugin",
+    "library",
+    "driver",
+    "add-on",
+    "extension",
+    "binding",
+    "interface",
+    "adapter",
+    "module",
+    "DB",
+    "official",
+    "Database",
+    "Oracle"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/oracle/node-oracledb.git"
+  },
+  "dependencies": {
+    "nan": "~2.1.0"
+  },
+  "devDependencies": {
+      "mocha": "~2.2.5",
+      "should": "~6.0.1",
+      "async": "~0.9.0"
+  },
+  "scripts": {
+      "test": "mocha -R spec --timeout 10000 test/*.js",
+      "testWindows": "mocha -R spec --timeout 0 test\\*.js"
+  },
+  "engines": {
+    "node": ">=0.10.28 <6"
+  },
+  "maintainers": [
+    {
+      "name": "Oracle Corp."
+    }
+  ],
+  "bugs": {
+    "url": "https://github.com/oracle/node-oracledb/issues"
+  },
+  "main": "./index.js"
 }

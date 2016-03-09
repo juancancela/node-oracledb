@@ -28,19 +28,20 @@
 
 #include <string>
 
-#ifndef DPI_ORACLE
-# include <dpi.h>
+
+#ifndef DPICOMMON_ORACLE
+# include <dpiCommon.h>
 #endif
 
 #ifndef DPIPOOL_ORACLE
 # include <dpiPool.h>
 #endif
 
-
 #ifndef DPICONN_ORACLE
 # include <dpiConn.h>
 #endif
 
+#define DPI_AL32UTF8         873
 
 using std::string;
 
@@ -51,6 +52,11 @@ namespace dpi
 class DateTimeArray;
 
 
+/*---------------------------------------------------------------------------
+                     PUBLIC CONSTANTS
+  ---------------------------------------------------------------------------*/
+
+  
 /*---------------------------------------------------------------------------
                      PUBLIC TYPES
   ---------------------------------------------------------------------------*/
@@ -77,8 +83,9 @@ class Env
   virtual void poolTimeout(unsigned int poolTimeout) = 0;
   virtual unsigned int poolTimeout() const = 0;
 
-  virtual void isExternalAuth(bool isExternalAuth) = 0;
-  virtual bool isExternalAuth() const = 0;
+  virtual void externalAuth(bool externalAuth) = 0;
+  virtual bool externalAuth() const = 0;
+
 
                                  // methods
   virtual SPool * createPool(const string &user, const string &password,
@@ -87,18 +94,41 @@ class Env
                              int poolIncrement = -1,
                              int poolTimeout = -1,
                              int stmtCacheSize = -1,
-                             bool isExternalAuth = false) = 0;
+                             bool externalAuth = false) = 0;
 
   virtual Conn * getConnection(const string &user, const string &password,
                                const string &connString,
                                int stmtCacheSize,
                                const string &connClass = "",
-                               bool isExternalAuth = false) = 0;
+                               bool externalAuth = false) = 0;
 
                                 // DateTime array
   virtual DateTimeArray * getDateTimeArray( OCIError *errh ) const = 0;
   virtual void            releaseDateTimeArray ( DateTimeArray *arr ) const = 0;
+  
+                                 // handle and descriptor methods
+  virtual DpiHandle * allocHandle(HandleType handleType) = 0;
+  
+  static void freeHandle(DpiHandle *handle, HandleType handleType);
+  
+  
+  virtual Descriptor * allocDescriptor(DescriptorType descriptorType)
+                              = 0;
+  
+  static void freeDescriptor(Descriptor *descriptor,
+                             DescriptorType descriptorType);
+  
+  virtual void allocDescriptorArray(DescriptorType descriptorType,
+                                    unsigned int arraySize,
+                                    Descriptor **descriptorArray) = 0;
+  
+  static void freeDescriptorArray(Descriptor **descriptorArray,
+                                  DescriptorType descriptorType);
 
+  
+  virtual DpiHandle * envHandle() const = 0;
+
+  
 protected:
                                 // clients cannot do new and delete
   Env();

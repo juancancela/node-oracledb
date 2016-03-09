@@ -20,28 +20,38 @@
  *
  * DESCRIPTION
  *   Holds the credentials used by node-oracledb examples to connect
- *   to the database.
- *
- *   The connectString here uses the Easy Connect syntax
- *   "localhost/XE".  This connects to the database service XE on the
- *   the local machine.
- *
+ *   to the database.  Production applications should consider using
+ *   External Authentication to avoid hard coded credentials.
+ * 
  *   Applications can set the connectString value to an Easy Connect
- *   string, or a Connect Name from a tnsnames.ora file, or the name
- *   of a local Oracle database instance.
- *
- *   The full Easy Connect syntax is:
+ *   string, or a Net Service Name from a tnsnames.ora file or
+ *   external naming service, or it can be the name of a local Oracle
+ *   database instance.
+ * 
+ *   If node-oracledb is linked with Instant Client, then an Easy
+ *   Connect string is generally appropriate.  The syntax is:
+ * 
  *     [//]host_name[:port][/service_name][:server_type][/instance_name]
- *   see https://docs.oracle.com/database/121/NETAG/naming.htm#i498306
+ * 
+ *   Commonly just the host_name and service_name are needed
+ *   e.g. "localhost/orcl" or "localhost/XE"
  *
- *   If a tnsnames.ora file is used, set the TNS_ADMIN environment
- *   variable such that $TNS_ADMIN/tnsnames.ora is read.
- *   Alternatively use $ORACLE_HOME/network/admin/tnsnames.ora or
- *   /etc/tnsnames.ora.
+ *   If using a tnsnames.ora file, the file can be in a default
+ *   location such as $ORACLE_HOME/network/admin/tnsnames.ora or
+ *   /etc/tnsnames.ora.  Alternatively set the TNS_ADMIN environment
+ *   variable and put the file in $TNS_ADMIN/tnsnames.ora.
  *
  *   If connectString is not specified, the empty string "" is used
  *   which indicates to connect to the local, default database.
  *
+ *   External Authentication can be used by setting the optional
+ *   property externalAuth to true.  External Authentication allows
+ *   applications to use an external password store such as Oracle
+ *   Wallet so passwords do not need to be hard coded into the
+ *   application.  The user and password properties for connecting or
+ *   creating a pool should not be set when externalAuth is true.
+ * 
+ * TROUBLESHOOTING
  *   Errors like:
  *     ORA-12541: TNS:no listener
  *   or
@@ -52,11 +62,23 @@
  *     ORA-12514: TNS:listener does not currently know of requested in connect descriptor
  *   indicates connectString is invalid.  You are reaching a computer
  *   with Oracle installed but the service name isn't known.
+ *   Use 'lsnrctl services' on the database server to find available services
  *
  *****************************************************************************/
 
 module.exports = {
-  user          : "hr",
-  password      : "welcome",
-  connectString : "localhost/XE"
+  user          : process.env.NODE_ORACLEDB_USER || "hr",
+
+  // Instead of hard coding the password, consider prompting for it,
+  // passing it in an environment variable via process.env, or using
+  // External Authentication.
+  password      : process.env.NODE_ORACLEDB_PASSWORD || "welcome",
+
+  // For information on connection strings see:
+  // https://github.com/oracle/node-oracledb/blob/master/doc/api.md#connectionstrings
+  connectString : process.env.NODE_ORACLEDB_CONNECTIONSTRING || "localhost/orcl",
+
+  // Setting externalAuth is optional.  It defaults to false.  See:
+  // https://github.com/oracle/node-oracledb/blob/master/doc/api.md#extauth
+  externalAuth  : process.env.NODE_ORACLEDB_EXTERNALAUTH ? true : false
 };

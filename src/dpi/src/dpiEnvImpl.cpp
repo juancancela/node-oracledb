@@ -24,11 +24,6 @@
  *
  *****************************************************************************/
 
-#ifndef ORATYPES
-# include <oratypes.h>
-#endif
-
-
 #ifndef DPIENVIMPL_ORACLE
 # include <dpiEnvImpl.h>
 #endif
@@ -97,11 +92,12 @@ EnvImpl::EnvImpl()
 
 try : envh_(NULL), poolMax_(kPoolMax), poolMin_(kPoolMin),
       poolIncrement_(kPoolIncrement), poolTimeout_(kPoolTimeout),
-      isExternalAuth_(false),  stmtCacheSize_(kStmtCacheSize)
+      externalAuth_(false),  stmtCacheSize_(kStmtCacheSize)
 {
 
-  sword rc = OCIEnvCreate (&envh_, OCI_THREADED | OCI_OBJECT, NULL, NULL,
-                           NULL, NULL, 0, NULL);
+  sword rc = OCIEnvNlsCreate (&envh_, OCI_THREADED | OCI_OBJECT, NULL, NULL,
+                              NULL, NULL, 0, NULL, DPI_AL32UTF8, DPI_AL32UTF8);
+
   if (rc)
   {
     if (envh_)
@@ -364,7 +360,7 @@ unsigned int EnvImpl::poolTimeout() const
      Specify external authentication.
 
    PARAMETERS:
-    isExternalAuth  - true if using external authentication
+    externalAuth  - true if using external authentication
                       false if not useing external authentication
 
    RETURNS:
@@ -374,9 +370,9 @@ unsigned int EnvImpl::poolTimeout() const
 
  */
 
-void EnvImpl::isExternalAuth(bool isExternalAuth)
+void EnvImpl::externalAuth(bool externalAuth)
 {
-  isExternalAuth_ = isExternalAuth;
+  externalAuth_ = externalAuth;
 }
 
 
@@ -397,9 +393,9 @@ void EnvImpl::isExternalAuth(bool isExternalAuth)
 
  */
 
-bool EnvImpl::isExternalAuth() const
+bool EnvImpl::externalAuth() const
 {
-  return isExternalAuth_;
+  return externalAuth_;
 }
 
 
@@ -470,7 +466,7 @@ SPool * EnvImpl::createPool(const string &user, const string &password,
                             const string &connString,
                             int poolMax, int poolMin, int poolIncrement,
                             int poolTimeout, int stmtCacheSize,
-                            bool isExternalAuth)
+                            bool externalAuth)
 {
   return new PoolImpl(this, envh_, user, password, connString,
                       (poolMax == -1) ? poolMax_ : poolMax,
@@ -479,7 +475,7 @@ SPool * EnvImpl::createPool(const string &user, const string &password,
                                               poolIncrement,
                       (poolTimeout == -1) ? poolTimeout_ :
                                             poolTimeout,
-                      isExternalAuth,
+                      externalAuth,
                       (stmtCacheSize == -1) ? stmtCacheSize_ :
                       stmtCacheSize);
 }
@@ -504,9 +500,9 @@ SPool * EnvImpl::createPool(const string &user, const string &password,
 Conn * EnvImpl::getConnection(const string &user, const string &password,
                               const string &connString,
                               int stmtCacheSize, const string &connClass,
-                              bool isExternalAuth)
+                              bool externalAuth)
 {
-  return (Conn *)new ConnImpl(this, envh_, isExternalAuth,
+  return (Conn *)new ConnImpl(this, envh_, externalAuth,
                               (stmtCacheSize == -1) ? stmtCacheSize_ :
                                                       stmtCacheSize,
                               user, password,
@@ -633,7 +629,13 @@ void EnvImpl::cleanup()
 */
 DateTimeArray* EnvImpl::getDateTimeArray (OCIError *errh) const
 {
-  return new DateTimeArrayImpl ( envh_, errh, this ) ;
+
+  DateTimeArray *dtmarr = new DateTimeArrayImpl ( envh_, errh, this ) ;
+  if( !dtmarr )
+  {
+    throw ExceptionImpl ( DpiErrMemAllocFail ) ;
+  }
+  return dtmarr; 
 }
 
 
@@ -654,6 +656,108 @@ void EnvImpl::releaseDateTimeArray ( DateTimeArray *arr )  const
     delete arr;
 }
 
+
+
+/*****************************************************************************/
+/*
+   DESCRIPTION
+     Allocate DPI handle.
+
+   PARAMETERS:
+     handleType - Type of DPI handle to be allocated
+
+   RETURNS:
+     allocated DPI handle
+
+   NOTES:
+     
+ */
+
+DpiHandle * EnvImpl::allocHandle(HandleType handleType)
+{
+  void *handle = NULL;
+
+  ociCallEnv(OCIHandleAlloc(envh_, &handle, handleType, 0, NULL),
+             envh_);
+
+  return (DpiHandle *)handle;
+}
+
+
+
+/*****************************************************************************/
+/*
+   DESCRIPTION
+     Allocate DPI descriptor.
+
+   PARAMETERS:
+     descriptorType - Type of DPI descriptor to be allocated
+
+   RETURNS:
+     allocated DPI descriptor
+
+   NOTES:
+     
+ */
+
+Descriptor * EnvImpl::allocDescriptor(DescriptorType descriptorType)
+{
+  void *descriptor = NULL;
+
+  ociCallEnv(OCIDescriptorAlloc(envh_, &descriptor, descriptorType,
+                                0, NULL), envh_);
+
+  return (Descriptor *)descriptor;
+}
+
+
+
+/*****************************************************************************/
+/*
+   DESCRIPTION
+     Allocate DPI descriptor array.
+
+   PARAMETERS:
+     descriptorType - Type of DPI descriptor to be allocated
+     arraySize      - size of descriptor array
+
+   RETURNS:
+     allocated DPI descriptor array
+
+   NOTES:
+     
+ */
+
+void EnvImpl::allocDescriptorArray(DescriptorType descriptorType,
+                                   unsigned int arraySize,
+                                   Descriptor **descriptorArray)
+{
+  ociCallEnv(OCIArrayDescriptorAlloc(envh_, (void **)descriptorArray,
+                                     descriptorType, arraySize,
+                                     0, NULL), envh_);
+}
+
+
+
+/*****************************************************************************/
+/*
+   DESCRIPTION
+     Get the underlying OCI environment handlle.
+
+   PARAMETERS:
+     none
+
+   RETURNS:
+     OCI environment handle
+
+   NOTES:
+     
+ */
+
+DpiHandle * EnvImpl::envHandle() const
+{
+  return (DpiHandle *)envh_;
+}
 
 
 

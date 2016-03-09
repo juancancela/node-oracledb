@@ -16,23 +16,20 @@
  * limitations under the License.
  *
  * NAME
- *   plsql.js
+ *   dmlrupd1.js
  *
  * DESCRIPTION
- *   Show calling a PL/SQL procedure and binding parameters in various ways
- *   Use demo.sql to create the required procedure or do:
- * 
- *   CREATE OR REPLACE PROCEDURE testproc (p_in IN VARCHAR2, p_inout IN OUT VARCHAR2, p_out OUT NUMBER)
- *     AS
- *   BEGIN
- *     p_inout := p_in || p_inout;
- *     p_out := 101;
- *   END;
- *   /
+ *   Example of 'DML Returning' with a single row match
+ *   Use demo.sql to create the required table or do:
+ *     DROP TABLE dmlrupdtab;
+ *     CREATE TABLE dmlrupdtab (id NUMBER, name VARCHAR2(40));
+ *     INSERT INTO dmlrupdtab VALUES (1001, 'Venkat');
+ *     INSERT INTO dmlrupdtab VALUES (1002, 'Neeharika');
+ *     COMMIT;
  *
  *****************************************************************************/
 
-var oracledb = require('oracledb');
+var oracledb = require( 'oracledb' );
 var dbConfig = require('./dbconfig.js');
 
 oracledb.getConnection(
@@ -41,21 +38,30 @@ oracledb.getConnection(
     password      : dbConfig.password,
     connectString : dbConfig.connectString
   },
-  function (err, connection)
+  function(err, connection)
   {
-    if (err) { console.error(err.message); return; }
-
-    var bindvars = {
-      i:  'Chris',  // bind type is determined from the data type
-      io: { val: 'Jones', dir : oracledb.BIND_INOUT },
-      o:  { type: oracledb.NUMBER, dir : oracledb.BIND_OUT },
+    if (err)
+    {
+      console.error(err);
+      return;
     }
+
     connection.execute(
-      "BEGIN testproc(:i, :io, :o); END;",
-      bindvars,
-      function (err, result)
+      "UPDATE DMLRUPDTAB SET NAME = :name WHERE ID = :id RETURNING ID, NAME INTO :RID, :RNAME",
       {
-        if (err) { console.error(err.message); return; }
-        console.log(result.outBinds);        
+        id:    1001,
+        name:  "Krishna",
+        rid:   { type: oracledb.NUMBER, dir: oracledb.BIND_OUT },
+        rname: { type: oracledb.STRING, dir: oracledb.BIND_OUT }
+      },
+      { autoCommit: true },
+      function(err, result)
+      {
+        if (err)
+        {
+          console.error(err);
+          return;
+        }
+        console.log(result.outBinds);
       });
   });
